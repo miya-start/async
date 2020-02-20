@@ -14,7 +14,7 @@ const App = () => {
     fetchSubreddit,
     fetching,
   } = useFetch()
-  const isEmpty = postsBySubreddit.length === 0
+  const isEmpty = Object.keys(postsBySubreddit).length === 0
   const { lastUpdated, items: posts } = postsBySubreddit[selectedSubreddit] || {
     fetching: true,
     items: [],
