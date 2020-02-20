@@ -8,26 +8,24 @@ import useFetch from '../hooks/useFetch'
 const App = () => {
   const dispatch = useDispatch()
   const {
-    fetchPostsIfNeeded,
-    selectedSubreddit,
-    postsBySubreddit,
-    fetchSubreddit,
     fetching,
+    fetchPostsIfNeeded,
+    fetchSubreddit,
+    isEmpty,
+    lastUpdated,
+    posts,
+    selectedSubreddit,
   } = useFetch()
-  const isEmpty = Object.keys(postsBySubreddit).length === 0
-  const { lastUpdated, items: posts } = postsBySubreddit[selectedSubreddit] || {
-    fetching: true,
-    items: [],
-  }
+
+  useEffect(() => {
+    fetchSubreddit()
+  }, [fetchSubreddit])
+
   const handleRefreshClick = e => {
     e.preventDefault()
     dispatch(invalidateSubreddit(selectedSubreddit))
     fetchPostsIfNeeded()
   }
-
-  useEffect(() => {
-    fetchSubreddit()
-  }, [fetchSubreddit])
 
   return (
     <div>

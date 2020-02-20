@@ -35,12 +35,20 @@ const useFetch = () => {
     }
   }
 
+  const isEmpty = Object.keys(postsBySubreddit).length === 0
+  const { lastUpdated, items: posts } = postsBySubreddit[selectedSubreddit] || {
+    fetching: true,
+    items: [],
+  }
+
   return {
-    fetchPostsIfNeeded,
-    selectedSubreddit,
-    postsBySubreddit,
-    fetchSubreddit,
     fetching,
+    fetchPostsIfNeeded,
+    fetchSubreddit,
+    isEmpty,
+    lastUpdated,
+    posts,
+    selectedSubreddit,
   }
 }
 
