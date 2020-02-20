@@ -1,8 +1,14 @@
+import { renderHook, act } from '@testing-library/react-hooks'
 import configureMockStore from 'redux-mock-store'
-import thunk from 'redux-thunk'
-import * as actions from './index'
 import fetchMock from 'fetch-mock'
+import {
+  useSelector as useSelectorMock,
+  useDispatch as useDispatchMock,
+} from 'react-redux'
+import * as actions from './index'
+import useFetch from '../hooks/useFetch'
 
+jest.mock('react-redux')
 const RealDate = Date.now
 
 beforeAll(() => {
@@ -17,30 +23,38 @@ afterAll(() => {
   Date.now = RealDate
 })
 
-const middlewares = [thunk]
-const mockStore = configureMockStore(middlewares)
+test('async actions', async () => {
+  // storeをmockする
+  const store = configureMockStore()({ postsBySubreddit: {} })
+  const defaultValue = 'reactjs'
 
-test('async actions', () => {
   const subreddit = 'reactjs'
   const endpoint = `https://www.reddit.com/r/${subreddit}.json`
-  fetchMock.getOnce(endpoint, {
-    body: { data: { children: [] } },
-    headers: { 'content-type': 'application/json' },
-  })
-
-  const expectedActions = [
-    { type: actions.REQUEST_POSTS, subreddit },
+  const post1 = { title: 'title1' }
+  const post2 = { title: 'title2' }
+  const fetchedPosts = [{ data: post1 }, { data: post2 }]
+  const expectedAction = [
     {
       type: actions.RECEIVE_POSTS,
+      posts: [post1, post2],
       subreddit,
-      posts: [],
       receivedAt: Date.now(),
     },
   ]
-  const store = mockStore({ postsBySubreddit: {} })
 
-  return store.dispatch(actions.fetchPosts(subreddit)).then(() => {
-    // return of async actions
-    expect(store.getActions()).toEqual(expectedActions)
+  useSelectorMock.mockReturnValue(defaultValue)
+  useDispatchMock.mockReturnValue(store.dispatch)
+
+  fetchMock.getOnce(endpoint, {
+    body: { data: { children: fetchedPosts } },
+    headers: { 'content-type': 'application/json' },
+  })
+
+  const { result } = renderHook(() => useFetch())
+
+  await act(async () => {
+    await result.current.fetchSubreddit(subreddit)
+
+    expect(store.getActions()).toEqual(expectedAction)
   })
 })

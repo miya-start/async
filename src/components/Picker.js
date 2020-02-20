@@ -1,27 +1,32 @@
 import React from 'react'
-import PropTypes from 'prop-types'
+import { useSelector, useDispatch } from 'react-redux'
+import { selectSubreddit } from '../actions'
 
-const Picker = ({ value, onChange, options }) => (
-  <span>
-    <h1>{value}</h1>
-    <select
-      onChange={e => onChange(e.target.value)}
-      value={value}
-      data-testid="select-subreddit"
-    >
-      {options.map(option => (
-        <option value={option} key={option}>
-          {option}
-        </option>
-      ))}
-    </select>
-  </span>
-)
+const Picker = () => {
+  const selectedSubreddit = useSelector(state => state.selectedSubreddit)
+  const dispatch = useDispatch()
+  const options = ['reactjs', 'frontend']
 
-Picker.propTypes = {
-  options: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
-  value: PropTypes.string.isRequired,
-  onChange: PropTypes.func.isRequired,
+  const handleChange = nextSubreddit => {
+    dispatch(selectSubreddit(nextSubreddit))
+  }
+
+  return (
+    <span>
+      <h1>{selectedSubreddit}</h1>
+      <select
+        onChange={e => handleChange(e.target.value)}
+        value={selectedSubreddit}
+        data-testid="select-subreddit"
+      >
+        {options.map(option => (
+          <option value={option} key={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+    </span>
+  )
 }
 
 export default Picker
