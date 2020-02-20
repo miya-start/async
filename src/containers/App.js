@@ -1,98 +1,58 @@
-import React, { Component } from 'react'
-import PropTypes from 'prop-types'
-import { connect } from 'react-redux'
-import {
-  selectSubreddit,
-  fetchPostsIfNeeded,
-  invalidateSubreddit,
-} from '../actions'
+import React, { useEffect } from 'react'
+import { useDispatch } from 'react-redux'
+import { invalidateSubreddit } from '../actions'
 import Picker from '../components/Picker'
 import Posts from '../components/Posts'
+import useFetch from '../hooks/useFetch'
 
-class App extends Component {
-  static propTypes = {
-    selectedSubreddit: PropTypes.string.isRequired,
-    posts: PropTypes.array.isRequired,
-    isFetching: PropTypes.bool.isRequired,
-    lastUpdated: PropTypes.number,
-    dispatch: PropTypes.func.isRequired,
-  }
-
-  componentDidMount() {
-    const { dispatch, selectedSubreddit } = this.props
-    dispatch(fetchPostsIfNeeded(selectedSubreddit))
-  }
-
-  componentDidUpdate(prevProps) {
-    if (prevProps.selectedSubreddit !== this.props.selectedSubreddit) {
-      const { dispatch, selectedSubreddit } = this.props
-      dispatch(fetchPostsIfNeeded(selectedSubreddit))
-    }
-  }
-
-  handleChange = nextSubreddit => {
-    this.props.dispatch(selectSubreddit(nextSubreddit))
-  }
-
-  handleRefreshClick = e => {
-    e.preventDefault()
-
-    const { dispatch, selectedSubreddit } = this.props
-    dispatch(invalidateSubreddit(selectedSubreddit))
-    dispatch(fetchPostsIfNeeded(selectedSubreddit))
-  }
-
-  render() {
-    const { selectedSubreddit, posts, isFetching, lastUpdated } = this.props
-    const isEmpty = posts.length === 0
-    return (
-      <div>
-        <Picker
-          value={selectedSubreddit}
-          onChange={this.handleChange}
-          options={['reactjs', 'frontend']}
-        />
-        <p>
-          {lastUpdated && (
-            <span>
-              Last updated at {new Date(lastUpdated).toLocaleTimeString()}.{' '}
-            </span>
-          )}
-          {!isFetching && (
-            <button onClick={this.handleRefreshClick}>Refresh</button>
-          )}
-        </p>
-        {isEmpty ? (
-          isFetching ? (
-            <h2>Loading...</h2>
-          ) : (
-            <h2>Empty.</h2>
-          )
-        ) : (
-          <div style={{ opacity: isFetching ? 0.5 : 1 }}>
-            <Posts posts={posts} />
-          </div>
-        )}
-      </div>
-    )
-  }
-}
-
-const mapStateToProps = state => {
-  const { selectedSubreddit, postsBySubreddit } = state
-  const { isFetching, lastUpdated, items: posts } = postsBySubreddit[
-    selectedSubreddit
-  ] || {
-    isFetching: true,
+const App = () => {
+  const dispatch = useDispatch()
+  const {
+    fetchPostsIfNeeded,
+    selectedSubreddit,
+    postsBySubreddit,
+    fetchSubreddit,
+    fetching,
+  } = useFetch()
+  const isEmpty = postsBySubreddit.length === 0
+  const { lastUpdated, items: posts } = postsBySubreddit[selectedSubreddit] || {
+    fetching: true,
     items: [],
   }
-
-  return {
-    selectedSubreddit,
-    posts,
-    isFetching,
-    lastUpdated,
+  const handleRefreshClick = e => {
+    e.preventDefault()
+    dispatch(invalidateSubreddit(selectedSubreddit))
+    fetchPostsIfNeeded()
   }
+
+  useEffect(() => {
+    fetchSubreddit()
+  }, [fetchSubreddit])
+
+  return (
+    <div>
+      <Picker />
+      <p>
+        {lastUpdated && (
+          <span>
+            Last updated at {new Date(lastUpdated).toLocaleTimeString()}.{' '}
+          </span>
+        )}
+        {!fetching && <button onClick={handleRefreshClick}>Refresh</button>}
+      </p>
+      {isEmpty ? (
+        fetching ? (
+          <h2>Loading...</h2>
+        ) : (
+          <h2>Empty.</h2>
+        )
+      ) : (
+        <div style={{ opacity: fetching ? 0.5 : 1 }}>
+          <Posts posts={posts} />
+        </div>
+      )}
+    </div>
+  )
 }
 
-export default connect(mapStateToProps)(App)
+export default App
